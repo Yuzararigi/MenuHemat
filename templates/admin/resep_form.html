@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{% if resep %}Edit resep{% else %}Resep baru{% endif %}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('admin_resep_list') }}">&larr; Kelola resep</a></p>
+<h1>{% if resep %}Edit resep{% else %}Tambah resep{% endif %}</h1>
+{% if err %}<p class="err">{{ err }}</p>{% endif %}
+<form method="post" class="panel">
+  {% set f = form %}
+  {% set r = resep %}
+  <div class="row">
+    <label>Nama resep*
+      <input type="text" name="nama" required value="{{ f.get('nama', r['nama'] if r else '') }}">
+    </label>
+  </div>
+  <div class="row">
+    <label>Deskripsi
+      <input type="text" name="deskripsi" value="{{ f.get('deskripsi', r['deskripsi'] if r else '') }}">
+    </label>
+  </div>
+  <div class="row">
+    <label>Kategori
+      <select name="kategori">
+        {% for k, label in kategoris.items() %}
+        <option value="{{ k }}" {% if f.get('kategori', r['kategori'] if r else 'makan_malam') == k %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Porsi
+      <input type="number" name="porsi" min="1" value="{{ f.get('porsi', r['porsi'] if r else 4) }}">
+    </label>
+    <label>Waktu (menit)
+      <input type="number" name="menit" min="0" value="{{ f.get('menit', r['waktu_masak_menit'] if r else 30) }}">
+    </label>
+    <label>Tingkat
+      <select name="tingkat">
+        {% for t in ['mudah','sedang','sulit'] %}
+        <option {% if f.get('tingkat', r['tingkat'] if r else 'mudah') == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="row">
+    <label>Tags (pisahkan koma)
+      <input type="text" name="tags" value="{{ f.get('tags', r['tags'] if r else '') }}">
+    </label>
+  </div>
+
+  <h3>Komposisi bahan</h3>
+  <p class="muted small">Isi baris yang dipakai saja; baris kosong diabaikan.</p>
+  {% set komposisi_map = {} %}
+  {% for kb in komposisi %}{% set _ = komposisi_map.update({loop.index0: kb}) %}{% endfor %}
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Bahan</th><th>Jumlah</th><th>Satuan</th><th>Opsional</th></tr></thead>
+    <tbody>
+    {% for i in range(n_baris) %}
+      {% set kb = komposisi_map.get(i) %}
+      <tr>
+        <td>
+          <select name="bahan_{{ i }}">
+            <option value="">— pilih —</option>
+            {% for b in bahans %}
+            <option value="{{ b.id }}" {% if (f.get('bahan_' ~ i) or (kb['bahan_id'] if kb else ''))|string == b.id|string %}selected{% endif %}>{{ b.nama }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td><input type="number" step="any" min="0" name="jumlah_{{ i }}" value="{{ f.get('jumlah_' ~ i, kb['jumlah'] if kb else '') }}" style="width:90px"></td>
+        <td>
+          <select name="satuan_{{ i }}">
+            {% for s in satuan_opsi %}
+            <option {% if (f.get('satuan_' ~ i) or (kb['satuan'] if kb else 'g')) == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td><input type="checkbox" name="ops_{{ i }}" value="1" {% if f.get('ops_' ~ i) or (kb and kb['opsional']) %}checked{% endif %}></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <h3>Cara memasak</h3>
+  <p class="muted small">Satu langkah per baris.</p>
+  <label>
+    <textarea name="langkah" rows="8" style="width:100%;padding:9px 10px;border:1px solid var(--garis);border-radius:8px;font:inherit">{{ f.get('langkah', r['langkah'] if r and r['langkah'] else '') }}</textarea>
+  </label>
+
+  <button type="submit" class="btn">Simpan resep</button>
+  <a class="btn ghost" href="{{ url_for('admin_resep_list') }}">Batal</a>
+</form>
+{% endblock %}

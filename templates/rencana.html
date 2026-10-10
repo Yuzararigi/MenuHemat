@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Rencana mingguan{% endblock %}
+{% block content %}
+<h1>Rencana mingguan</h1>
+<p class="muted">Harga bahan tanggal {{ tgl }} ({{ wilayah_tampil }}, sumber: {{ sumber }}).</p>
+{% if pesan %}<p class="notice">{{ pesan }}</p>{% endif %}
+
+<form method="post" action="{{ url_for('rencana') }}" class="panel">
+  <h3>Buatkan otomatis sesuai budget</h3>
+  <input type="hidden" name="aksi" value="otomatis">
+  <div class="row">
+    <label>Budget 7 hari (Rp)
+      <input type="number" name="budget_mingguan" value="350000" min="0">
+    </label>
+  </div>
+  <button type="submit" class="btn">Buatkan rencana</button>
+</form>
+
+<form method="post" action="{{ url_for('rencana') }}" class="panel">
+  <h3>Atur manual</h3>
+  <input type="hidden" name="aksi" value="manual">
+  {% for h in hari_list %}
+  <label class="planrow"><span>{{ h }}</span>
+    <select name="hari_{{ h }}">
+      <option value="">— kosong —</option>
+      {% for r in semua_resep %}
+      <option value="{{ r.id }}" {% if tersimpan.get(h)==r.id %}selected{% endif %}>{{ r.nama }} ({{ kat_label(r.kategori) }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endfor %}
+  <button type="submit" class="btn">Simpan rencana</button>
+</form>
+
+<h2>Rencana tersimpan</h2>
+<div class="tbl-wrap"><table>
+  <thead><tr><th>Hari</th><th>Menu</th><th class="num">Estimasi biaya</th></tr></thead>
+  <tbody>
+  {% for b in baris %}
+    <tr>
+      <td>{{ b.hari }}</td>
+      <td>{% if b.resep %}<a href="{{ url_for('detail_resep', resep_id=b.resep.id) }}">{{ b.resep.nama }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="num">{% if b.resep %}{{ b.total|rp }}{% else %}<span class="muted">—</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><th colspan="2">Total 7 hari</th><th class="num">{{ total|rp }}</th></tr></tfoot>
+</table></div>
+
+<h2>Daftar belanja otomatis</h2>
+<p class="muted">Agregat semua bahan dari rencana di atas.</p>
+<div class="tbl-wrap"><table>
+  <thead><tr><th>Bahan</th><th>Jumlah total</th><th class="num">Estimasi biaya</th></tr></thead>
+  <tbody>
+  {% for d in daftar_belanja %}
+    <tr><td>{{ d.nama }}</td><td>{{ qty_cantik(d.qty, d.dasar) }}</td><td class="num">{{ d.biaya|rp }}</td></tr>
+  {% else %}
+    <tr><td colspan="3" class="muted">Rencana masih kosong.</td></tr>
+  {% endfor %}
+  </tbody>
+  {% if daftar_belanja %}
+  <tfoot><tr><th colspan="2">Total belanja</th><th class="num">{{ total_belanja|rp }}</th></tr></tfoot>
+  {% endif %}
+</table></div>
+{% endblock %}

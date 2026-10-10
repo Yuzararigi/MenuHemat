@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ normal.resep.nama }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('index') }}">&larr; Kembali</a></p>
+<div class="card-head">
+  <h1>{{ normal.resep.nama }}</h1>
+  {% if me %}
+  <form method="post" action="{{ url_for('toggle_favorit', resep_id=normal.resep.id) }}">
+    <button class="star {% if favorit %}on{% endif %}" title="Favorit">&#9733;</button>
+  </form>
+  {% endif %}
+</div>
+<p>
+  <span class="badge">{{ kat_label(normal.resep.kategori) }}</span>
+  <span class="muted">{{ normal.porsi }} porsi &middot; {{ normal.resep.waktu_masak_menit }} menit &middot; {{ normal.resep.tingkat }}</span>
+</p>
+<p>{{ normal.resep.deskripsi }}</p>
+<p class="muted small">Harga bahan tanggal {{ tgl }} ({{ wilayah_tampil|title }}, sumber: {{ sumber }}).</p>
+
+<div class="totals">
+  <div class="total-box">
+    <span>Total</span><b>{{ normal.total|rp }}</b>
+    <span>{{ normal.per_porsi|rp }}/porsi</span>
+  </div>
+  <div class="total-box hemat">
+    <span>Mode super hemat</span><b>{{ hemat.total|rp }}</b>
+    <span>{{ hemat.per_porsi|rp }}/porsi{% if hemat.dilewati %} ({{ hemat.dilewati }} bahan dibuang){% endif %}</span>
+  </div>
+  {% if gizi.ada %}
+  <div class="total-box gizi-box">
+    <span>Estimasi gizi/porsi</span><b>{{ gizi.per_porsi.kalori|round|int }} kkal</b>
+    <span>P {{ gizi.per_porsi.protein|round(1) }}g &middot; K {{ gizi.per_porsi.karbo|round(1) }}g &middot; L {{ gizi.per_porsi.lemak|round(1) }}g</span>
+  </div>
+  {% endif %}
+</div>
+
+<h2>Rincian biaya bahan</h2>
+<div class="tbl-wrap"><table>
+  <thead><tr><th>Bahan</th><th>Takaran</th><th>Harga satuan</th><th class="num">Biaya</th></tr></thead>
+  <tbody>
+  {% for it in normal["items"] %}
+    <tr><td>{{ it.nama }}</td><td>{{ it.takaran }}</td><td class="muted small">{{ it.harga_label }}</td><td class="num">{{ it.biaya|rp }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if gizi.ada %}
+<h2>Kandungan gizi (estimasi)</h2>
+<p class="muted small">Dihitung dari tabel komposisi pangan per 100 g bahan. Angka ini <b>estimasi</b>, bukan hasil uji laboratorium.</p>
+<div class="tbl-wrap"><table>
+  <thead><tr><th>Zat gizi</th><th class="num">Per resep ({{ gizi.porsi }} porsi)</th><th class="num">Per porsi</th></tr></thead>
+  <tbody>
+    <tr><td>Kalori</td><td class="num">{{ gizi.total.kalori|round|int }} kkal</td><td class="num">{{ gizi.per_porsi.kalori|round|int }} kkal</td></tr>
+    <tr><td>Protein</td><td class="num">{{ gizi.total.protein|round(1) }} g</td><td class="num">{{ gizi.per_porsi.protein|round(1) }} g</td></tr>
+    <tr><td>Karbohidrat</td><td class="num">{{ gizi.total.karbo|round(1) }} g</td><td class="num">{{ gizi.per_porsi.karbo|round(1) }} g</td></tr>
+    <tr><td>Lemak</td><td class="num">{{ gizi.total.lemak|round(1) }} g</td><td class="num">{{ gizi.per_porsi.lemak|round(1) }} g</td></tr>
+    <tr><td>Serat</td><td class="num">{{ gizi.total.serat|round(1) }} g</td><td class="num">{{ gizi.per_porsi.serat|round(1) }} g</td></tr>
+    <tr><td>Natrium</td><td class="num">{{ gizi.total.natrium|round|int }} mg</td><td class="num">{{ gizi.per_porsi.natrium|round|int }} mg</td></tr>
+  </tbody>
+</table></div>
+{% endif %}
+
+{% if langkah %}
+<h2>Cara memasak</h2>
+<ol class="langkah">
+  {% for s in langkah %}<li>{{ s }}</li>{% endfor %}
+</ol>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{% if bahan %}Edit bahan{% else %}Bahan baru{% endif %}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('admin_bahan_list') }}">&larr; Kelola bahan</a></p>
+<h1>{% if bahan %}Edit bahan{% else %}Tambah bahan{% endif %}</h1>
+{% if err %}<p class="err">{{ err }}</p>{% endif %}
+<form method="post" class="panel">
+  {% set f = form %}
+  {% set b = bahan %}
+  <div class="row">
+    <label>Nama bahan*
+      <input type="text" name="nama" required value="{{ f.get('nama', b['nama'] if b else '') }}">
+    </label>
+    <label>Kategori
+      <input type="text" name="kategori" value="{{ f.get('kategori', b['kategori'] if b else 'lainnya') }}">
+    </label>
+  </div>
+  <div class="row">
+    <label>Komoditas PIHPS (harga otomatis harian)
+      <select name="komoditas_id">
+        <option value="">— tidak ada (pakai harga manual) —</option>
+        {% for k in komoditas %}
+        <option value="{{ k.id }}" {% if (f.get('komoditas_id', b['komoditas_id'] if b and b['komoditas_id'] else '')|string) == k.id|string %}selected{% endif %}>{{ k.nama_pihps }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="row">
+    <label>Harga manual (Rp)
+      <input type="number" step="any" min="0" name="harga_manual_rp" value="{{ f.get('harga_manual_rp', b['harga_manual_rp'] if b and b['harga_manual_rp'] else '') }}">
+    </label>
+    <label>Satuan kemasan <span class="muted small">(cth: ikat)</span>
+      <input type="text" name="satuan_manual" value="{{ f.get('satuan_manual', b['satuan_manual'] if b and b['satuan_manual'] else '') }}">
+    </label>
+    <label>Isi kemasan <span class="muted small">(dalam satuan dasar)</span>
+      <input type="number" step="any" min="0" name="isi_satuan_manual" value="{{ f.get('isi_satuan_manual', b['isi_satuan_manual'] if b and b['isi_satuan_manual'] else '') }}">
+    </label>
+  </div>
+  <div class="row">
+    <label>Satuan dasar*
+      <select name="satuan_dasar">
+        {% for s in ['g','ml'] %}
+        <option {% if f.get('satuan_dasar', b['satuan_dasar'] if b else 'g') == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Alergen <span class="muted small">(cth: telur, seafood, gluten — kosongkan bila aman)</span>
+      <input type="text" name="alergen" value="{{ f.get('alergen', b['alergen'] if b and b['alergen'] else '') }}">
+    </label>
+  </div>
+
+  <h3>Data gizi <span class="muted small">(per 100 g/ml — estimasi)</span></h3>
+  <div class="row">
+    <label>Kalori (kkal)<input type="number" step="any" min="0" name="g_kalori" value="{{ f.get('g_kalori', gizi['kalori'] if gizi and gizi['kalori'] is not none else '') }}"></label>
+    <label>Protein (g)<input type="number" step="any" min="0" name="g_protein" value="{{ f.get('g_protein', gizi['protein'] if gizi and gizi['protein'] is not none else '') }}"></label>
+    <label>Karbohidrat (g)<input type="number" step="any" min="0" name="g_karbo" value="{{ f.get('g_karbo', gizi['karbo'] if gizi and gizi['karbo'] is not none else '') }}"></label>
+  </div>
+  <div class="row">
+    <label>Lemak (g)<input type="number" step="any" min="0" name="g_lemak" value="{{ f.get('g_lemak', gizi['lemak'] if gizi and gizi['lemak'] is not none else '') }}"></label>
+    <label>Serat (g)<input type="number" step="any" min="0" name="g_serat" value="{{ f.get('g_serat', gizi['serat'] if gizi and gizi['serat'] is not none else '') }}"></label>
+    <label>Natrium (mg)<input type="number" step="any" min="0" name="g_natrium" value="{{ f.get('g_natrium', gizi['natrium'] if gizi and gizi['natrium'] is not none else '') }}"></label>
+  </div>
+
+  <button type="submit" class="btn">Simpan bahan</button>
+  <a class="btn ghost" href="{{ url_for('admin_bahan_list') }}">Batal</a>
+</form>
+{% endblock %}

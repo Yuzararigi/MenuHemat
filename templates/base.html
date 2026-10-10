@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}MenuHemat{% endblock %} — Masak hemat ikut harga pasar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('index') }}">MenuHemat</a>
+  <nav>
+    <a href="{{ url_for('index') }}" class="{% if active=='home' %}on{% endif %}">Beranda</a>
+    <a href="{{ url_for('rencana') }}" class="{% if active=='rencana' %}on{% endif %}">Rencana</a>
+    <a href="{{ url_for('harga') }}" class="{% if active=='harga' %}on{% endif %}">Harga</a>
+    {% if me and me['role'] == 'admin' %}
+    <a href="{{ url_for('admin_index') }}" class="{% if active=='admin' %}on{% endif %}">Admin</a>
+    {% endif %}
+  </nav>
+</header>
+<div class="subbar">
+  <form method="post" action="{{ url_for('set_wilayah') }}" class="wilayah-form">
+    <label>Wilayah (provinsi)
+      <select name="wilayah" onchange="this.form.submit()" title="PIHPS hanya menyediakan data level provinsi">
+        {% for w in daftar_wilayah %}
+        <option value="{{ w }}" {% if w == wilayah_aktif %}selected{% endif %}>{{ w|title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+  <div class="auth-links">
+    {% if me %}
+      <span class="muted small">{{ me['username'] }} ({{ me['role'] }})</span>
+      <a href="{{ url_for('ganti_password') }}">Ganti password</a>
+      <a href="{{ url_for('logout') }}">Keluar</a>
+    {% else %}
+      <span class="muted small">Mode tamu</span>
+      <a href="{{ url_for('login') }}" class="btn kecil">Masuk</a>
+    {% endif %}
+  </div>
+</div>
+{% with msgs = get_flashed_messages() %}
+{% if msgs %}
+<div class="wrap flashes">
+  {% for m in msgs %}<p class="notice">{{ m }}</p>{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+<main class="wrap">
+{% block content %}{% endblock %}
+</main>
+<footer class="foot">Data harga: PIHPS Bank Indonesia &middot; diperbarui harian &middot; angka gizi adalah estimasi</footer>
+</body>
+</html>

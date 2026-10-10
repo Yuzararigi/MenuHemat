@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Menu termurah hari ini{% endblock %}
+{% block content %}
+<h1>Menu termurah hari ini</h1>
+<p class="muted">
+  {% if ada_harga %}
+  Berdasarkan harga pasar tanggal <b>{{ tgl }}</b> ({{ wilayah_tampil|title }}, sumber: {{ sumber }}).
+  {% else %}
+  <b>Data harga belum ada.</b> Jalankan <code>python fetch_harga.py</code> dulu.
+  {% endif %}
+  {% if disembunyikan %}{{ disembunyikan }} resep disembunyikan karena pantanganmu.{% endif %}
+</p>
+{% if not me %}
+<p class="notice">Kamu browsing sebagai <b>tamu</b> (wilayah: {{ wilayah_aktif|title }}).
+<a href="{{ url_for('login') }}">Masuk</a> untuk favorit, pantangan, dan perencana mingguan.</p>
+{% endif %}
+
+<form method="get" action="{{ url_for('index') }}" class="panel">
+  <div class="row">
+    <label>Kategori
+      <select name="kategori">
+        <option value="">Semua</option>
+        {% for k, label in kategoris.items() %}
+        <option value="{{ k }}" {% if kat==k %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Maks Rp/porsi
+      <input type="number" name="maks" value="{{ maks }}" placeholder="cth: 8000" min="0">
+    </label>
+  </div>
+  <label class="check"><input type="checkbox" name="hemat" value="1" {% if super_hemat %}checked{% endif %}>
+    Mode super hemat <span class="muted">(buang bahan opsional, lalu ranking ulang)</span></label>
+  <button type="submit" class="btn">Terapkan</button>
+  {% if kat or maks or super_hemat %}<a class="btn ghost" href="{{ url_for('index') }}">Reset</a>{% endif %}
+</form>
+
+<form method="get" action="{{ url_for('index') }}" class="panel">
+  <h3>Kalkulator budget</h3>
+  <div class="row">
+    <label>Budget per hari (Rp)
+      <input type="number" name="budget" value="{{ budget_txt }}" placeholder="cth: 50000" min="0">
+    </label>
+  </div>
+  {% for k in ['kategori','maks'] %}{% if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endif %}{% endfor %}
+  {% if super_hemat %}<input type="hidden" name="hemat" value="1">{% endif %}
+  <button type="submit" class="btn">Hitung paket hemat</button>
+  {% if budget_err %}<p class="err">{{ budget_err }}</p>{% endif %}
+</form>
+
+{% if paket %}
+<div class="panel paket {% if paket.masuk %}ok{% else %}kurang{% endif %}">
+  <h3>Paket 1 hari: sarapan + siang + malam</h3>
+  <ul>
+    {% for p in paket["items"] %}
+    <li><a href="{{ url_for('detail_resep', resep_id=p.resep.id) }}">{{ p.resep.nama }}</a>
+      <span class="muted">({{ kat_label(p.resep.kategori) }})</span> — <b>{{ p.total|rp }}</b></li>
+    {% endfor %}
+  </ul>
+  <p>Total: <b>{{ paket.total|rp }}</b> dari budget {{ paket.budget|rp }} —
+  {% if paket.masuk %}<b class="good">MASUK BUDGET</b>{% else %}<b class="bad">LEBIH {{ (paket.total - paket.budget)|rp }}</b>{% endif %}</p>
+</div>
+{% endif %}
+
+<div class="cards">
+{% for c in cards %}
+  <article class="card">
+    <div class="card-head">
+      <div>
+        <span class="badge">{{ kat_label(c.resep.kategori) }}</span>
+        {% if c.kkal_porsi is not none %}<span class="badge gizi">{{ c.kkal_porsi }} kkal/porsi*</span>{% endif %}
+        {% if c.dilewati %}<span class="badge hemat">{{ c.dilewati }} bahan opsional dibuang</span>{% endif %}
+      </div>
+      {% if me %}
+      <form method="post" action="{{ url_for('toggle_favorit', resep_id=c.resep.id) }}">
+        <button class="star {% if c.favorit %}on{% endif %}" title="Favorit">&#9733;</button>
+      </form>
+      {% else %}
+      <a class="star" title="Masuk untuk menyimpan favorit" href="{{ url_for('login') }}">&#9734;</a>
+      {% endif %}
+    </div>
+    <h2><a href="{{ url_for('detail_resep', resep_id=c.resep.id) }}">{{ c.resep.nama }}</a></h2>
+    <p class="muted">{{ c.resep.deskripsi }}</p>
+    <div class="price"><b>{{ c.per_porsi|rp }}</b><span>/porsi</span></div>
+    <p class="muted small">Total {{ c.total|rp }} untuk {{ c.resep.porsi }} porsi &middot; {{ c.resep.waktu_masak_menit }} menit</p>
+  </article>
+{% else %}
+  <p class="muted">Tidak ada resep yang cocok dengan filter.</p>
+{% endfor %}
+</div>
+<p class="muted small">*Angka kkal adalah estimasi dari tabel komposisi pangan.</p>
+
+{% if me %}
+<h2 id="pantangan">Pantangan &amp; alergi</h2>
+<p class="muted">Centang bahan yang tidak boleh muncul di rekomendasi (alergi, pantangan, atau tidak suka).</p>
+<form method="post" action="{{ url_for('simpan_pantangan') }}" class="panel">
+  <div class="checks">
+    {% for b in semua_bahan %}
+    <label class="check"><input type="checkbox" name="bahan" value="{{ b.id }}"
+      {% if b.id in pant_info %}checked{% endif %}>
+      {{ b.nama }}{% if b.alergen %} <span class="muted small">(alergen: {{ b.alergen }})</span>{% endif %}</label>
+    {% endfor %}
+  </div>
+  <button type="submit" class="btn">Simpan pantangan</button>
+</form>
+{% else %}
+<div class="panel">
+  <h3>Pantangan &amp; alergi</h3>
+  <p class="muted"><a href="{{ url_for('login') }}">Masuk</a> untuk mengatur bahan yang ingin dihindari (alergi, pantangan, atau tidak suka).</p>
+</div>
+{% endif %}
+{% endblock %}

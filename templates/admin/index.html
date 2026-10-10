@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Panel admin{% endblock %}
+{% block content %}
+<h1>Panel admin</h1>
+<div class="totals">
+  <div class="total-box"><span>Resep</span><b>{{ stats.resep }}</b></div>
+  <div class="total-box"><span>Bahan</span><b>{{ stats.bahan }}</b></div>
+  <div class="total-box"><span>Pengguna</span><b>{{ stats.users }}</b></div>
+  <div class="total-box"><span>Harga PIHPS</span><b>{{ stats.harga[0] }}</b><span>terbaru: {{ stats.harga[1] or '-' }}</span></div>
+</div>
+<div class="panel">
+  <h3>Kelola</h3>
+  <p>
+    <a class="btn" href="{{ url_for('admin_resep_list') }}">Resep</a>
+    <a class="btn" href="{{ url_for('admin_bahan_list') }}">Bahan</a>
+    <a class="btn ghost" href="{{ url_for('admin_users') }}">Pengguna</a>
+  </p>
+</div>
+<div class="panel">
+  <h3>Data harga</h3>
+  <p class="muted small">Menarik ulang harga dari PIHPS Bank Indonesia (berjalan di background, butuh beberapa menit).</p>
+  <form method="post" action="{{ url_for('admin_update_harga') }}">
+    <button type="submit" class="btn">Update harga sekarang</button>
+  </form>
+</div>
+{% endblock %}

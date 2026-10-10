@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Akses ditolak{% endblock %}
+{% block content %}
+<h1>Akses ditolak</h1>
+<p class="muted">Halaman ini khusus <b>admin</b>. Akunmu tidak punya hak akses.</p>
+<p><a href="{{ url_for('index') }}">&larr; Kembali ke beranda</a></p>
+{% endblock %}

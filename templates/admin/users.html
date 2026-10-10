@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Daftar pengguna{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('admin_index') }}">&larr; Panel admin</a></p>
+<h1>Daftar pengguna</h1>
+<p class="muted small">Hanya lihat. Untuk menambah/mengubah akun, hubungi pengelola database.</p>
+<div class="tbl-wrap"><table>
+  <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Nama</th><th>Wilayah</th></tr></thead>
+  <tbody>
+  {% for u in rows %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td>{{ u.username }}</td>
+      <td><span class="badge">{{ u.role }}</span></td>
+      <td>{{ u.nama }}</td>
+      <td>{{ u.wilayah|title }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}
