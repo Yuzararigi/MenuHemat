@@ -127,6 +127,7 @@
     maxRp: null,
     sehari: new Set(lsGet("mh_sehari", [])),
     rencana: lsGet("mh_rencana", [null, null, null, null, null, null, null]),
+    rencanaKos: lsGet("mh_rencana_kos", false),
   };
   if (!DB.wilayah.includes(state.wilayah)) state.wilayah = "NASIONAL";
   function save() {
@@ -135,6 +136,7 @@
     lsSet("mh_pantangan", [...state.pantangan]);
     lsSet("mh_sehari", [...state.sehari]);
     lsSet("mh_rencana", state.rencana);
+    lsSet("mh_rencana_kos", state.rencanaKos);
   }
 
   const $ = (id) => document.getElementById(id);
@@ -265,12 +267,35 @@
 
   /* ---------- render: rencana ---------- */
   const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+  const isKos = (r) => tagList(r).includes("kos");
+  let rencanaKosMsg = ""; // catatan sesaat (mis. jumlah hari yang diganti), tidak disimpan
+  function rencanaPool() {
+    let list = visibleResep();
+    if (state.rencanaKos) list = list.filter(isKos);
+    return list
+      .map((r) => ({ r, c: biayaResep(r.id, state.wilayah) }))
+      .sort((a, b) => a.c.perPorsi - b.c.perPorsi);
+  }
   function renderRencana() {
-    const opts = visibleResep().map((r) => ({ r, c: biayaResep(r.id, state.wilayah) }));
-    opts.sort((a, b) => a.c.perPorsi - b.c.perPorsi);
+    const opts = rencanaPool();
+    $("rencana-kos").checked = state.rencanaKos;
+    const note = $("rencana-kos-note");
+    if (state.rencanaKos) {
+      note.hidden = false;
+      note.textContent = "Mode anak kos aktif — pilihan & isi otomatis hanya resep Anak Kos." +
+        (rencanaKosMsg ? " " + rencanaKosMsg : "");
+    } else {
+      note.hidden = true;
+    }
+    $("auto-rencana").textContent = state.rencanaKos
+      ? "Isi otomatis (7 resep anak kos termurah)"
+      : "Isi otomatis (7 termurah)";
     $("rencana-rows").innerHTML = HARI.map((h, i) => {
       const cur = state.rencana[i];
-      const c = cur ? biayaResep(cur, state.wilayah) : null;
+      const curResep = cur ? resepById[cur] : null;
+      // saat mode kos aktif, pilihan lama yang bukan resep kos tidak ditampilkan sebagai terpilih
+      const curOk = curResep && (!state.rencanaKos || isKos(curResep));
+      const c = curOk ? biayaResep(cur, state.wilayah) : null;
       const options = '<option value="">— pilih hidangan —</option>' + opts.map((x) =>
         '<option value="' + x.r.id + '"' + (x.r.id === cur ? " selected" : "") + ">" +
         esc(x.r.nama) + " (" + rp(x.c.perPorsi) + "/porsi)</option>"
@@ -282,7 +307,8 @@
   }
   function renderBelanja() {
     const box = $("belanja");
-    const chosen = state.rencana.filter((id) => id && resepById[id] && resepAman(id, state.pantangan));
+    const chosen = state.rencana.filter((id) => id && resepById[id] && resepAman(id, state.pantangan) &&
+      (!state.rencanaKos || isKos(resepById[id])));
     if (!chosen.length) { box.innerHTML = '<p class="hint">Belum ada hidangan dipilih.</p>'; return; }
     const agg = {};
     chosen.forEach((rid) => {
@@ -453,10 +479,32 @@
       state.rencana[i] = e.target.value ? parseInt(e.target.value, 10) : null;
       save(); renderRencana();
     });
+    $("rencana-kos").addEventListener("change", (e) => {
+      state.rencanaKos = e.target.checked;
+      rencanaKosMsg = "";
+      if (state.rencanaKos) {
+        // Pilihan lama yang bukan resep kos diganti otomatis ke resep kos
+        // termurah yang belum dipakai hari lain, agar rencana tetap lengkap.
+        const pool = rencanaPool();
+        const dipakai = new Set(state.rencana.filter((id) => id && resepById[id] && isKos(resepById[id])));
+        let ganti = 0;
+        state.rencana = state.rencana.map((id) => {
+          if (!id || (resepById[id] && isKos(resepById[id]))) return id;
+          const cand = pool.find((x) => !dipakai.has(x.r.id)) || pool[0];
+          if (!cand) return null;
+          dipakai.add(cand.r.id);
+          ganti++;
+          return cand.r.id;
+        });
+        if (ganti) {
+          rencanaKosMsg = ganti + " hari diganti ke resep anak kos termurah karena pilihan sebelumnya bukan resep anak kos.";
+        }
+      }
+      save(); renderRencana();
+    });
     $("auto-rencana").addEventListener("click", () => {
-      const list = visibleResep().map((r) => ({ id: r.id, c: biayaResep(r.id, state.wilayah) }));
-      list.sort((a, b) => a.c.perPorsi - b.c.perPorsi);
-      state.rencana = [0, 1, 2, 3, 4, 5, 6].map((i) => (list[i] ? list[i].id : null));
+      const list = rencanaPool();
+      state.rencana = [0, 1, 2, 3, 4, 5, 6].map((i) => (list[i] ? list[i].r.id : null));
       save(); renderRencana();
     });
 

@@ -582,11 +582,35 @@ def rencana():
     pant = pantangan_ids(uid)
     pesan = None
 
+    # Mode anak kos untuk halaman rencana: disimpan di session agar
+    # bertahan antar form; diubah lewat form kecil (GET) atau ikut
+    # terbawa sebagai field tersembunyi pada form POST.
+    if request.method == "GET" and "set_kos" in request.args:
+        session["rencana_kos"] = request.args.get("kos") == "1"
+    if request.method == "POST" and "kos" in request.form:
+        session["rencana_kos"] = request.form.get("kos") == "1"
+    kos_mode = bool(session.get("rencana_kos"))
+
+    def _tag_tokens(row):
+        # kolom tag hanya ada setelah migrasi ekspansi_resep.py
+        try:
+            return [t.strip() for t in (row["tag"] or "").split(",")
+                    if t.strip()]
+        except (IndexError, KeyError):
+            return []
+
     if request.method == "POST":
         aksi = request.form.get("aksi", "manual")
         if aksi == "manual":
+            dilewati = 0
             for h in HARI:
                 rid = request.form.get("hari_" + h, "").strip()
+                if rid and kos_mode:
+                    row = con.execute("SELECT * FROM resep WHERE id = ?",
+                                      (int(rid),)).fetchone()
+                    if row is None or "kos" not in _tag_tokens(row):
+                        rid = ""
+                        dilewati += 1
                 if rid:
                     con.execute(
                         "INSERT OR REPLACE INTO rencana (user_id, hari, resep_id)"
@@ -596,12 +620,15 @@ def rencana():
                                 (uid, h))
             con.commit()
             pesan = "Rencana mingguan disimpan."
+            if dilewati:
+                pesan += (f" {dilewati} hari dikosongkan karena bukan resep "
+                          f"anak kos (mode anak kos aktif).")
         elif aksi == "otomatis":
             try:
                 budget = float(request.form.get("budget_mingguan", "350000") or 0)
             except ValueError:
                 budget = 0
-            hasil = rencana_otomatis(con, prices, pant, budget)
+            hasil = rencana_otomatis(con, prices, pant, budget, kos=kos_mode)
             for h, rid in zip(HARI, hasil["pilihan"]):
                 con.execute(
                     "INSERT OR REPLACE INTO rencana (user_id, hari, resep_id)"
@@ -613,9 +640,13 @@ def rencana():
             else:
                 pesan = (f"Resep termurah pun butuh {rupiah(hasil['total'])} untuk 7 hari, "
                          f"melebihi budget {rupiah(budget)}. Naikkan budget atau aktifkan mode hemat.")
+            if kos_mode:
+                pesan += " (Mode anak kos aktif — semua pilihan adalah resep anak kos.)"
 
     tersimpan = _rencana_tersimpan(con, uid)
-    semua_resep = con.execute("SELECT id, nama, kategori FROM resep ORDER BY nama").fetchall()
+    semua_resep = con.execute("SELECT * FROM resep ORDER BY nama").fetchall()
+    if kos_mode:
+        semua_resep = [r for r in semua_resep if "kos" in _tag_tokens(r)]
 
     # susun tampilan + daftar belanja agregat
     baris, belanja, total = [], {}, 0.0
@@ -653,18 +684,30 @@ def rencana():
 
     return render_template("rencana.html", active="rencana", hari_list=HARI,
                            tersimpan=tersimpan, semua_resep=semua_resep,
+                           kos_mode=kos_mode,
                            baris=baris, daftar_belanja=daftar_belanja,
                            total=total, total_belanja=total_belanja,
                            pesan=pesan, tgl=tgl, sumber=sumber,
                            wilayah_tampil=wil, qty_cantik=qty_cantik)
 
 
-def rencana_otomatis(con, prices, pant, budget):
-    """Isi 7 hari dengan resep termurah (boleh berulang, tidak berurutan sama)."""
+def rencana_otomatis(con, prices, pant, budget, kos=False):
+    """Isi 7 hari dengan resep termurah (boleh berulang, tidak berurutan sama).
+
+    Bila kos=True, kandidat dibatasi resep berlabel anak kos.
+    """
     kandidat = []
     for r in con.execute("SELECT * FROM resep"):
         if mengandung_pantangan(con, r["id"], pant):
             continue
+        if kos:
+            try:
+                tokens = [t.strip() for t in (r["tag"] or "").split(",")
+                          if t.strip()]
+            except (IndexError, KeyError):
+                tokens = []
+            if "kos" not in tokens:
+                continue
         c = biaya_resep(con, r["id"], prices)
         kandidat.append((c["total"], r["id"]))
     kandidat.sort()

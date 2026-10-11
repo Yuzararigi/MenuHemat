@@ -113,6 +113,10 @@
   <section id="tab-rencana" class="tab" hidden>
     <h2>Rencana mingguan</h2>
     <p class="hint">Pilih satu hidangan untuk tiap hari, lalu lihat daftar belanja agregat di bawah.</p>
+    <div class="rencana-bar">
+      <label><input type="checkbox" id="rencana-kos"> Mode anak kos <span class="hint">&mdash; hanya resep Anak Kos (bahan inti &le; 5, mudah dicari)</span></label>
+    </div>
+    <p id="rencana-kos-note" class="hint" hidden></p>
     <div id="rencana-rows"></div>
     <button id="auto-rencana" type="button">Isi otomatis (7 termurah)</button>
     <h3>Daftar belanja</h3>

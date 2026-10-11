@@ -5,9 +5,17 @@
 <p class="muted">Harga bahan tanggal {{ tgl }} ({{ wilayah_tampil }}, sumber: {{ sumber }}).</p>
 {% if pesan %}<p class="notice">{{ pesan }}</p>{% endif %}
 
+<form method="get" action="{{ url_for('rencana') }}" class="panel">
+  <input type="hidden" name="set_kos" value="1">
+  <label class="check"><input type="checkbox" name="kos" value="1" onchange="this.form.submit()" {% if kos_mode %}checked{% endif %}>
+    Mode anak kos <span class="muted">(pilihan &amp; buat otomatis hanya resep anak kos &mdash; maksimal 5 bahan inti, mudah dicari)</span></label>
+  {% if kos_mode %}<p class="muted">Mode anak kos aktif. Hari tersimpan yang bukan resep anak kos tampil kosong di form manual di bawah dan akan terhapus bila rencana disimpan.</p>{% endif %}
+</form>
+
 <form method="post" action="{{ url_for('rencana') }}" class="panel">
   <h3>Buatkan otomatis sesuai budget</h3>
   <input type="hidden" name="aksi" value="otomatis">
+  <input type="hidden" name="kos" value="{{ '1' if kos_mode else '0' }}">
   <div class="row">
     <label>Budget 7 hari (Rp)
       <input type="number" name="budget_mingguan" value="350000" min="0">
@@ -19,6 +27,7 @@
 <form method="post" action="{{ url_for('rencana') }}" class="panel">
   <h3>Atur manual</h3>
   <input type="hidden" name="aksi" value="manual">
+  <input type="hidden" name="kos" value="{{ '1' if kos_mode else '0' }}">
   {% for h in hari_list %}
   <label class="planrow"><span>{{ h }}</span>
     <select name="hari_{{ h }}">
