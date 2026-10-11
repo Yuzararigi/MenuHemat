@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MenuHemat — Menu termurah dari harga pasar</title>
+<meta name="description" content="Rekomendasi menu harian termurah berdasarkan harga bahan pokok pasar (PIHPS Bank Indonesia).">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>MenuHemat</h1>
+    <p class="tagline">Menu harian termurah dari harga pasar hari ini</p>
+    <p class="banner">Snapshot statis &mdash; data harga per 9 Okt 2026. Versi live dengan harga harian ada di aplikasi penuh.</p>
+    <div class="topbar">
+      <label class="wilayah">Wilayah harga
+        <select id="wilayah"></select>
+      </label>
+    </div>
+    <nav class="tabs" aria-label="Navigasi">
+      <button data-tab="beranda" class="active" type="button">Beranda</button>
+      <button data-tab="sehari" type="button">Satu Hari Makan</button>
+      <button data-tab="rencana" type="button">Rencana Mingguan</button>
+      <button data-tab="harga" type="button">Harga Pasar</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ============ BERANDA ============ -->
+  <section id="tab-beranda" class="tab">
+    <div id="hero"></div>
+
+    <div class="filters">
+      <label>Kategori
+        <select id="f-kategori">
+          <option value="semua">Semua</option>
+          <option value="sarapan">Sarapan</option>
+          <option value="makan_siang">Makan siang</option>
+          <option value="makan_malam">Makan malam</option>
+          <option value="camilan">Camilan</option>
+        </select>
+      </label>
+      <label>Maks Rp/porsi
+        <input id="f-max" type="number" min="0" placeholder="cth. 5000">
+      </label>
+      <button id="f-fav" type="button" aria-pressed="false">Favorit saja</button>
+      <button id="f-pant" type="button" aria-pressed="false">Pantangan (<span id="pant-count">0</span>)</button>
+    </div>
+    <div id="pant-panel" class="pant-panel" hidden>
+      <p class="hint">Centang bahan yang ingin dihindari &mdash; resep yang mengandungnya akan disembunyikan.</p>
+      <div id="pant-list" class="pant-list"></div>
+    </div>
+
+    <div id="grid" class="grid"></div>
+    <p id="grid-empty" class="empty" hidden>Tidak ada resep yang cocok dengan filter.</p>
+  </section>
+
+  <!-- ============ SATU HARI MAKAN ============ -->
+  <section id="tab-sehari" class="tab" hidden>
+    <h2>Cek satu hari makan</h2>
+    <p class="hint">Klik kartu hidangan di bawah untuk memilih. Klik lagi untuk batal memilih. Pilihan otomatis masuk hitungan.</p>
+    <div class="sehari-bar">
+      <label>Budget sehari (Rp)
+        <input id="budget" type="number" min="0" value="50000">
+      </label>
+      <button id="auto-sehari" type="button">Isi menu termurah</button>
+      <button id="clear-sehari" type="button">Kosongkan</button>
+    </div>
+    <div id="sehari-summary" class="summary" hidden></div>
+    <div id="sehari-grid" class="grid"></div>
+  </section>
+
+  <!-- ============ RENCANA MINGGUAN ============ -->
+  <section id="tab-rencana" class="tab" hidden>
+    <h2>Rencana mingguan</h2>
+    <p class="hint">Pilih satu hidangan untuk tiap hari, lalu lihat daftar belanja agregat di bawah.</p>
+    <div id="rencana-rows"></div>
+    <button id="auto-rencana" type="button">Isi otomatis (7 termurah)</button>
+    <h3>Daftar belanja</h3>
+    <div id="belanja"></div>
+  </section>
+
+  <!-- ============ HARGA ============ -->
+  <section id="tab-harga" class="tab" hidden>
+    <h2>Harga bahan pokok</h2>
+    <p class="sumber" id="harga-sumber"></p>
+    <table class="harga-table">
+      <thead><tr><th>Komoditas</th><th>Harga</th></tr></thead>
+      <tbody id="harga-body"></tbody>
+    </table>
+    <p class="hint">Harga adalah rata-rata pasar tradisional per provinsi; harga di pasar/warung tertentu bisa berbeda &plusmn;2&ndash;5%.</p>
+  </section>
+</main>
+
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <button class="modal-close" type="button">Tutup</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>MenuHemat &mdash; snapshot statis untuk GitHub Pages. Data harga: PIHPS Nasional &middot; Bank Indonesia, per 9 Okt 2026. Angka gizi adalah estimasi.</p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
