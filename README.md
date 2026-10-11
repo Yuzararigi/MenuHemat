@@ -8,8 +8,9 @@ Fitur:
   pasar terbaru, lengkap dengan filter kategori, batas Rp/porsi, favorit
   (bintang), dan pengaturan pantangan/alergi.
 - **Mode super hemat** — membuang bahan opsional lalu me-ranking ulang.
-- **Kalkulator budget** — masukkan budget Rp/hari, dapat paket
-  sarapan + makan siang + makan malam yang masuk akal.
+- **Cek satu hari makan** — pilih hidangan sarapan/siang/malam sendiri
+  (tiap pilihan tampil biaya per porsi), atau klik **Isi menu termurah**
+  untuk pengisian otomatis; total dibandingkan dengan budget harianmu.
 - **Detail resep** — rincian biaya per bahan, total, dan per porsi,
   **kandungan gizi (estimasi)**, dan **langkah memasak**.
 - **Rencana mingguan** — atur 7 hari manual atau buatkan otomatis sesuai

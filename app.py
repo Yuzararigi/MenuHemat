@@ -68,6 +68,18 @@ app.jinja_env.filters["rp"] = rupiah
 app.jinja_env.globals["kat_label"] = lambda k: KATEGORI_LABEL.get(k, k)
 
 
+def sumber_label(sumber):
+    """Label sumber data harga yang ramah dibaca."""
+    if sumber == "PIHPS":
+        return "PIHPS Nasional \u00b7 Bank Indonesia"
+    if sumber == "SAMPLE":
+        return "Data contoh (mode offline)"
+    return sumber or "-"
+
+
+app.jinja_env.globals["sumber_label"] = sumber_label
+
+
 def me():
     """User yang sedang login (row) atau None untuk pengunjung."""
     uid = session.get("user_id")
@@ -353,6 +365,10 @@ def index():
     maks = request.args.get("maks", "").strip()
     super_hemat = request.args.get("hemat") == "1"
     budget_txt = request.args.get("budget", "").strip()
+    s1 = request.args.get("s1", "").strip()
+    s2 = request.args.get("s2", "").strip()
+    s3 = request.args.get("s3", "").strip()
+    auto = request.args.get("auto") == "1"
 
     cards, disembunyikan = [], 0
     for r in con.execute("SELECT * FROM resep ORDER BY nama"):
@@ -376,12 +392,45 @@ def index():
                       "kkal_porsi": round(gz["per_porsi"]["kalori"]) if gz["ada"] else None})
     cards.sort(key=lambda x: x["per_porsi"])
 
-    paket, budget_err = None, None
-    if budget_txt:
-        try:
-            paket = paket_budget(con, prices, float(budget_txt), pant, super_hemat)
-        except ValueError:
-            budget_err = "Masukkan angka, contoh: 50000"
+    # --- cek satu hari makan: mulai kosong, user pilih sendiri ---
+    opsi = {"sarapan": [], "makan_siang": [], "makan_malam": []}
+    for c in cards:
+        kk = c["resep"]["kategori"]
+        if kk in opsi:
+            opsi[kk].append({"id": c["resep"]["id"], "nama": c["resep"]["nama"],
+                            "per_porsi": c["per_porsi"]})
+
+    harian, budget_err = None, None
+    if auto or s1 or s2 or s3:
+        if auto:
+            # isi otomatis dengan hidangan termurah per waktu makan
+            for kk, kunci in (("sarapan", "s1"), ("makan_siang", "s2"),
+                              ("makan_malam", "s3")):
+                best = min(opsi[kk], key=lambda o: o["per_porsi"],
+                           default=None)
+                val = str(best["id"]) if best else ""
+                if kunci == "s1":
+                    s1 = val
+                elif kunci == "s2":
+                    s2 = val
+                else:
+                    s3 = val
+        items = []
+        for rid in (s1, s2, s3):
+            c = next((c for c in cards if str(c["resep"]["id"]) == rid),
+                     None)
+            if c:
+                items.append(c)
+        total = sum(c["total"] for c in items)
+        budget, masuk = None, None
+        if budget_txt:
+            try:
+                budget = float(budget_txt)
+                masuk = total <= budget
+            except ValueError:
+                budget_err = "Masukkan angka, contoh: 50000"
+        harian = {"items": items, "total": total,
+                  "budget": budget, "masuk": masuk}
 
     semua_bahan, pant_info = [], {}
     if uid:
@@ -394,28 +443,10 @@ def index():
         "index.html", active="home", cards=cards, tgl=tgl, sumber=sumber,
         wilayah_tampil=wil, disembunyikan=disembunyikan, kat=kat,
         kategoris=KATEGORI_LABEL, maks=maks, super_hemat=super_hemat,
-        budget_txt=budget_txt, paket=paket, budget_err=budget_err,
+        budget_txt=budget_txt, budget_err=budget_err,
+        opsi=opsi, s1=s1, s2=s2, s3=s3, harian=harian,
         semua_bahan=semua_bahan, pant_info=pant_info,
         ada_harga=bool(prices))
-
-
-def paket_budget(con, prices, budget, pant, super_hemat):
-    """Satu paket sarapan+siang+malam termurah yang masuk budget."""
-    paket = []
-    for kat in ["sarapan", "makan_siang", "makan_malam"]:
-        best = None
-        for r in con.execute("SELECT * FROM resep WHERE kategori = ?", (kat,)):
-            if mengandung_pantangan(con, r["id"], pant):
-                continue
-            c = biaya_resep(con, r["id"], prices, super_hemat)
-            if best is None or c["total"] < best["total"]:
-                best = {"resep": r, "total": c["total"],
-                        "per_porsi": c["per_porsi"]}
-        if best:
-            paket.append(best)
-    total = sum(p["total"] for p in paket)
-    return {"items": paket, "total": total, "budget": budget,
-            "masuk": total <= budget}
 
 
 @app.route("/favorit/<int:resep_id>", methods=["POST"])
@@ -627,6 +658,7 @@ def harga():
         if h_nas and kid in prev_nas and prev_nas[kid][0]:
             pct = (h_nas[0] - prev_nas[kid][0]) / prev_nas[kid][0] * 100
         baris.append({"nama": k["nama_pihps"], "kategori": k["kategori"],
+                      "satuan": k["satuan_harga"],
                       "nas": h_nas[0] if h_nas else None,
                       "wil": h_wil[0] if h_wil else None,
                       "sumber": h_nas[1] if h_nas else None, "pct": pct,

@@ -6,6 +6,7 @@
 <p class="muted">Belum ada data harga. Jalankan <code>python fetch_harga.py</code>.</p>
 {% else %}
 <p class="muted">Tanggal {{ tgl_now }}{% if tgl_prev %} (dibandingkan {{ tgl_prev }}){% endif %} &middot; kolom wilayah: {{ wilayah }}.</p>
+<p class="sumber">Sumber data: <b>{{ sumber_label(baris[0].sumber) if baris else '-' }}</b> &middot; terakhir update {{ tgl_now }}</p>
 
 {% for a in alerts %}
 <div class="alert {{ a.jenis }}">
@@ -20,8 +21,8 @@
   {% for b in baris %}
     <tr>
       <td>{{ b.nama }}</td>
-      <td class="num">{% if b.nas %}{{ b.nas|rp }}{% else %}<span class="muted">—</span>{% endif %}</td>
-      <td class="num">{% if b.wil %}{{ b.wil|rp }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="num">{% if b.nas %}{{ b.nas|rp }} <span class="muted small">/ {{ b.satuan }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="num">{% if b.wil %}{{ b.wil|rp }} <span class="muted small">/ {{ b.satuan }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
       <td class="num">
         {% if b.pct is not none %}
           <span class="{% if b.pct > 0.5 %}bad{% elif b.pct < -0.5 %}good{% else %}muted{% endif %}">
@@ -33,6 +34,6 @@
   {% endfor %}
   </tbody>
 </table></div>
-<p class="muted small">Sumber: {{ baris[0].sumber if baris else '-' }} (PIHPS Bank Indonesia). Harga per kg, rata-rata pasar tradisional.</p>
+<p class="muted small">Harga rata-rata pasar tradisional; satuan mengikuti tiap baris.</p>
 {% endif %}
 {% endblock %}

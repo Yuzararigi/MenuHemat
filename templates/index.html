@@ -4,7 +4,7 @@
 <h1>Menu termurah hari ini</h1>
 <p class="muted">
   {% if ada_harga %}
-  Berdasarkan harga pasar tanggal <b>{{ tgl }}</b> ({{ wilayah_tampil|title }}, sumber: {{ sumber }}).
+  Berdasarkan harga pasar tanggal <b>{{ tgl }}</b> ({{ wilayah_tampil|title }}, sumber: <b>{{ sumber_label(sumber) }}</b>).
   {% else %}
   <b>Data harga belum ada.</b> Jalankan <code>python fetch_harga.py</code> dulu.
   {% endif %}
@@ -35,30 +35,66 @@
   {% if kat or maks or super_hemat %}<a class="btn ghost" href="{{ url_for('index') }}">Reset</a>{% endif %}
 </form>
 
-<form method="get" action="{{ url_for('index') }}" class="panel">
-  <h3>Kalkulator budget</h3>
+<form method="get" action="{{ url_for('index') }}" class="panel" id="harian">
+  <h3>Cek satu hari makan</h3>
+  <p class="muted">Pilih hidangan untuk tiap waktu makan &mdash; atau kosongkan lalu klik <b>Isi menu termurah</b> untuk pengisian otomatis.</p>
   <div class="row">
-    <label>Budget per hari (Rp)
+    <label>Sarapan
+      <select name="s1">
+        <option value="">&mdash; pilih &mdash;</option>
+        {% for o in opsi.sarapan %}
+        <option value="{{ o.id }}" {% if s1 == o.id|string %}selected{% endif %}>{{ o.nama }} ({{ o.per_porsi|rp }}/porsi)</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Makan siang
+      <select name="s2">
+        <option value="">&mdash; pilih &mdash;</option>
+        {% for o in opsi.makan_siang %}
+        <option value="{{ o.id }}" {% if s2 == o.id|string %}selected{% endif %}>{{ o.nama }} ({{ o.per_porsi|rp }}/porsi)</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Makan malam
+      <select name="s3">
+        <option value="">&mdash; pilih &mdash;</option>
+        {% for o in opsi.makan_malam %}
+        <option value="{{ o.id }}" {% if s3 == o.id|string %}selected{% endif %}>{{ o.nama }} ({{ o.per_porsi|rp }}/porsi)</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="row">
+    <label>Budget hari ini / Rp (opsional)
       <input type="number" name="budget" value="{{ budget_txt }}" placeholder="cth: 50000" min="0">
     </label>
   </div>
   {% for k in ['kategori','maks'] %}{% if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endif %}{% endfor %}
   {% if super_hemat %}<input type="hidden" name="hemat" value="1">{% endif %}
-  <button type="submit" class="btn">Hitung paket hemat</button>
+  <button type="submit" class="btn">Hitung</button>
+  <button type="submit" name="auto" value="1" class="btn ghost">Isi menu termurah</button>
   {% if budget_err %}<p class="err">{{ budget_err }}</p>{% endif %}
 </form>
 
-{% if paket %}
-<div class="panel paket {% if paket.masuk %}ok{% else %}kurang{% endif %}">
-  <h3>Paket 1 hari: sarapan + siang + malam</h3>
+{% if harian %}
+<div class="panel paket {% if harian.budget is not none %}{% if harian.masuk %}ok{% else %}kurang{% endif %}{% endif %}">
+  <h3>Satu hari makanmu</h3>
+  {% if harian["items"] %}
   <ul>
-    {% for p in paket["items"] %}
-    <li><a href="{{ url_for('detail_resep', resep_id=p.resep.id) }}">{{ p.resep.nama }}</a>
-      <span class="muted">({{ kat_label(p.resep.kategori) }})</span> — <b>{{ p.total|rp }}</b></li>
+    {% for c in harian["items"] %}
+    <li><a href="{{ url_for('detail_resep', resep_id=c.resep.id) }}">{{ c.resep.nama }}</a>
+      <span class="muted">({{ kat_label(c.resep.kategori) }})</span> &mdash; <b>{{ c.total|rp }}</b>
+      <span class="muted">({{ c.per_porsi|rp }}/porsi)</span></li>
     {% endfor %}
   </ul>
-  <p>Total: <b>{{ paket.total|rp }}</b> dari budget {{ paket.budget|rp }} —
-  {% if paket.masuk %}<b class="good">MASUK BUDGET</b>{% else %}<b class="bad">LEBIH {{ (paket.total - paket.budget)|rp }}</b>{% endif %}</p>
+  <p>Total 1 hari: <b>{{ harian.total|rp }}</b>
+  {% if harian.budget is not none %}
+    dari budget {{ harian.budget|rp }} &mdash;
+    {% if harian.masuk %}<b class="good">MASUK BUDGET</b>{% else %}<b class="bad">LEBIH {{ (harian.total - harian.budget)|rp }}</b>{% endif %}
+  {% endif %}</p>
+  {% else %}
+  <p class="muted">Belum ada hidangan yang dipilih.</p>
+  {% endif %}
 </div>
 {% endif %}
 
