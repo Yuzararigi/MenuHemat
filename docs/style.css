@@ -113,6 +113,7 @@ h3 { font-size: 1.1rem; margin: 20px 0 8px; }
 .badge-asal { background: #eef2ff; color: #374151; }
 .badge-khusus.diet { background: #e6f4ea; color: #137333; }
 .badge-khusus.gym { background: #fdecea; color: #b3261e; }
+.badge-khusus.kos { background: #fff4e0; color: #8a5a00; }
 .card h3 { margin: 2px 0 4px; font-size: 1.05rem; }
 .card .meta { margin: 0; color: var(--abu); font-size: .85rem; }
 .card .fav {

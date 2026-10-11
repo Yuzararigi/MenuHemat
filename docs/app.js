@@ -22,6 +22,7 @@
     if (r.asal) h += '<span class="badge-asal">' + esc(r.asal) + "</span>";
     if (tags.includes("diet")) h += '<span class="badge-khusus diet">Diet</span>';
     if (tags.includes("gym")) h += '<span class="badge-khusus gym">Gym</span>';
+    if (tags.includes("kos")) h += '<span class="badge-khusus kos">Anak Kos</span>';
     return h ? '<span class="badges">' + h + "</span>" : "";
   }
   function thumbHTML(r, tag, cls) {
@@ -118,6 +119,7 @@
     fav: new Set(lsGet("mh_fav", [])),
     pantangan: new Set(lsGet("mh_pantangan", [])),
     favOnly: false,
+    kosOnly: false,
     kategori: "semua",
     asal: "semua",
     tagF: "semua",
@@ -167,6 +169,7 @@
     if (state.kategori !== "semua") list = list.filter((x) => x.r.kategori === state.kategori);
     if (state.asal !== "semua") list = list.filter((x) => x.r.asal === state.asal);
     if (state.tagF !== "semua") list = list.filter((x) => tagList(x.r).includes(state.tagF));
+    if (state.kosOnly) list = list.filter((x) => tagList(x.r).includes("kos"));
     if (state.favOnly) list = list.filter((x) => state.fav.has(x.r.id));
     if (state.maxRp != null && !isNaN(state.maxRp)) list = list.filter((x) => x.c.perPorsi <= state.maxRp);
     const U = state.urut;
@@ -371,6 +374,11 @@
     $("f-max").addEventListener("input", (e) => {
       const v = parseFloat(e.target.value);
       state.maxRp = isNaN(v) || v <= 0 ? null : v;
+      renderGrid();
+    });
+    $("f-kos").addEventListener("click", (e) => {
+      state.kosOnly = !state.kosOnly;
+      e.currentTarget.setAttribute("aria-pressed", state.kosOnly);
       renderGrid();
     });
     $("f-fav").addEventListener("click", (e) => {

@@ -379,6 +379,7 @@ def index():
     kat = request.args.get("kategori", "")
     asal = request.args.get("asal", "")
     tagf = request.args.get("tag", "")
+    kos = request.args.get("kos") == "1"
     urut = request.args.get("urut", "harga")
     if urut not in URUT_LABEL:
         urut = "harga"
@@ -410,6 +411,8 @@ def index():
         tag_list = [t.strip() for t in (_kol(r, "tag") or "").split(",")
                     if t.strip()]
         if tagf and tagf not in tag_list:
+            continue
+        if kos and "kos" not in tag_list:
             continue
         if maks:
             try:
@@ -496,7 +499,8 @@ def index():
         "index.html", active="home", cards=cards, tgl=tgl, sumber=sumber,
         wilayah_tampil=wil, disembunyikan=disembunyikan, kat=kat,
         kategoris=KATEGORI_LABEL, maks=maks, super_hemat=super_hemat,
-        asal=asal, asals=ASAL_LABEL, tagf=tagf, urut=urut, uruts=URUT_LABEL,
+        asal=asal, asals=ASAL_LABEL, tagf=tagf, kos=kos,
+        urut=urut, uruts=URUT_LABEL,
         budget_txt=budget_txt, budget_err=budget_err,
         opsi=opsi, s1=s1, s2=s2, s3=s3, harian=harian,
         semua_bahan=semua_bahan, pant_info=pant_info,

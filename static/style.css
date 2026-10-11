@@ -76,6 +76,7 @@ input[type="number"], input[type="text"], input[type="password"], select {
 .badge.asal { background: #ede9fe; color: #5b21b6; }
 .badge.diet { background: #e6f4ea; color: #137333; }
 .badge.gym { background: #fdecea; color: #b3261e; }
+.badge.kos { background: #fff4e0; color: #8a5a00; }
 .star {
   background: none; border: 0; font-size: 1.6rem; cursor: pointer; color: #d1d5db; padding: 0 2px;
 }

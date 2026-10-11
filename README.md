@@ -134,8 +134,10 @@ init_db.py          membangun database dari nol (15 resep, 36 bahan + gizi,
 ekspansi_resep.py   ekspansi katalog 15 -> 100 resep (migrasi kolom asal/tag,
                     +58 bahan, +85 resep dari resep_baru.py; idempoten)
 resep_baru.py       data 85 resep baru (10 daerah x 10 resep)
+label_kos.py        mode Anak Kos: +8 resep sederhana & label "kos" untuk resep
+                    berbahan inti <= 5 (bumbu dasar tidak dihitung; idempoten)
 export_static.py    ekspor menuhemat.db menjadi docs/data.js (situs statis)
-docs/               situs statis untuk GitHub Pages (termasuk foto 100 resep)
+docs/               situs statis untuk GitHub Pages (termasuk foto 108 resep)
 menuhemat.db        database SQLite (dibuat oleh init_db.py)
 skema-database.sql  draf skema awal (dokumentasi)
 templates/          halaman HTML (server-rendered, termasuk templates/admin/)
@@ -151,6 +153,7 @@ README.md           file ini
 python init_db.py        # hapus dan buat ulang menuhemat.db dari nol
 python fetch_harga.py    # isi dengan data harga asli PIHPS
 python ekspansi_resep.py # perluas katalog menjadi 100 resep + 94 bahan
+python label_kos.py      # +8 resep anak kos & label "kos" (total 108 resep)
 python export_static.py  # (opsional) bangun ulang situs statis di docs/
 ```
 
@@ -162,6 +165,12 @@ berulang (idempoten).
 
 Label **Diet** (≤400 kkal & serat ≥2 g/porsi) dan **Gym** (protein ≥20 g/porsi)
 dihitung dari komposisi bahan tiap resep, bukan klaim manual.
+
+Label **Anak Kos** (token `kos` pada kolom `tag`, diatur `label_kos.py`)
+diberikan pada resep dengan bahan inti ≤5. Bahan inti = semua bahan resep
+selain bumbu dasar (garam, gula, merica/lada, kaldu bubuk, minyak, margarin,
+air, kecap, saus-saus, cuka — tidak dihitung). Label ini bisa dikombinasikan
+dengan Diet/Gym lewat filter di beranda.
 
 ## Batasan yang diketahui
 
