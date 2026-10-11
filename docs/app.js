@@ -9,6 +9,18 @@
   const KAT = { sarapan: "Sarapan", makan_siang: "Makan siang", makan_malam: "Makan malam", camilan: "Camilan" };
   const GIZI_LABEL = [["kalori", "Kalori (kkal)"], ["protein", "Protein (g)"], ["karbo", "Karbohidrat (g)"], ["lemak", "Lemak (g)"], ["serat", "Serat (g)"], ["natrium", "Natrium (mg)"]];
 
+  /* Foto hidangan (file lokal di docs/images/). Bila file gagal dimuat,
+     <img> menghapus dirinya sendiri dan huruf inisial tampil sebagai fallback. */
+  const FOTO = {1:"nasi-goreng-jawa",2:"tumis-kangkung-terasi",3:"ayam-kecap",4:"sayur-asem",5:"tempe-goreng-tepung",6:"tahu-bacem",7:"telur-balado",8:"soto-ayam",9:"sayur-sop",10:"orek-tempe",11:"perkedel-kentang",12:"capcay",13:"mie-goreng-jawa",14:"tumis-buncis-tahu",15:"semur-telur-kentang"};
+  const fotoSrc = (r) => (FOTO[r.id] ? "images/" + FOTO[r.id] + ".jpg" : null);
+  function thumbHTML(r, tag, cls) {
+    const initial = esc(r.nama.trim().charAt(0).toUpperCase());
+    const src = fotoSrc(r);
+    const img = src ? '<img src="' + src + '" alt="' + esc(r.nama) + '" loading="lazy" onerror="this.remove()">' : "";
+    return "<" + tag + ' class="' + cls + '" aria-hidden="true">' + img +
+      '<span class="' + cls + '-initial">' + initial + "</span></" + tag + ">";
+  }
+
   function lsGet(k, fb) {
     try { const v = localStorage.getItem(k); return v === null ? fb : JSON.parse(v); }
     catch (e) { return fb; }
@@ -118,12 +130,12 @@
     const g = giziResep(r.id);
     const favOn = state.fav.has(r.id) ? " on" : "";
     const sel = opts && opts.selectable && state.sehari.has(r.id) ? " selected" : "";
-    const initial = esc(r.nama.trim().charAt(0).toUpperCase());
+    const thumb = thumbHTML(r, "span", "thumb");
     return (
       '<button type="button" class="card' + sel + '" data-id="' + r.id + '" data-mode="' + (opts && opts.selectable ? "select" : "detail") + '">' +
       '<span class="check" aria-hidden="true">&#10003;</span>' +
       '<span class="fav' + favOn + '" data-fav="' + r.id + '" role="button" aria-label="Favorit" tabindex="0">&#9733;</span>' +
-      '<span class="thumb" aria-hidden="true">' + initial + "</span>" +
+      thumb +
       '<span class="card-body">' +
       '<span class="kat">#' + r.id + " &middot; " + esc(KAT[r.kategori] || r.kategori) + "</span>" +
       "<h3>" + esc(r.nama) + "</h3>" +
@@ -156,7 +168,7 @@
     ).join("");
     $("hero").innerHTML =
       '<div class="hero">' +
-      '<div class="hero-thumb" aria-hidden="true">' + esc(top.r.nama.trim().charAt(0).toUpperCase()) + "</div>" +
+      thumbHTML(top.r, "div", "hero-thumb") +
       '<div class="hero-body">' +
       '<div class="hero-label">Paling hemat hari ini</div>' +
       "<h2>" + esc(top.r.nama) + "</h2>" +
@@ -278,6 +290,7 @@
     const langkah = (r.langkah || []).map((s, i) => "<li>" + esc(s) + "</li>").join("");
     $("modal-body").innerHTML =
       "<h2>" + esc(r.nama) + "</h2>" +
+      (fotoSrc(r) ? '<div class="detail-foto"><img src="' + fotoSrc(r) + '" alt="' + esc(r.nama) + '" onerror="this.closest(\'.detail-foto\').remove()"></div>' : "") +
       '<p class="hint">' + esc(KAT[r.kategori] || r.kategori) + " &middot; " + r.waktu + " menit &middot; " + r.porsi + " porsi &middot; " + esc(r.tingkat || "") + "</p>" +
       (r.deskripsi ? "<p>" + esc(r.deskripsi) + "</p>" : "") +
       "<h3>Rincian biaya (" + esc(state.wilayah) + ")</h3>" +
