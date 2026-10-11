@@ -105,6 +105,14 @@ h3 { font-size: 1.1rem; margin: 20px 0 8px; }
 }
 .card-body { padding: 12px 14px 14px; }
 .card .kat { font-size: .75rem; color: var(--aksen); font-weight: 700; text-transform: uppercase; }
+.badges { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0 4px; }
+.badge-asal, .badge-khusus {
+  display: inline-block; font-size: .7rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+.badge-asal { background: #eef2ff; color: #374151; }
+.badge-khusus.diet { background: #e6f4ea; color: #137333; }
+.badge-khusus.gym { background: #fdecea; color: #b3261e; }
 .card h3 { margin: 2px 0 4px; font-size: 1.05rem; }
 .card .meta { margin: 0; color: var(--abu); font-size: .85rem; }
 .card .fav {

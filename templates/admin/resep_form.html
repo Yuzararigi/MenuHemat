@@ -40,8 +40,24 @@
     </label>
   </div>
   <div class="row">
-    <label>Tags (pisahkan koma)
+    <label>Tags rasa (pisahkan koma)
       <input type="text" name="tags" value="{{ f.get('tags', r['tags'] if r else '') }}">
+    </label>
+    <label>Asal daerah
+      <select name="asal">
+        <option value="">— belum diisi —</option>
+        {% for a in ['Jawa','Sunda','Sumatera','Bali','Sulawesi','Kalimantan','Western','Asia','Timur','Nusantara'] %}
+        <option value="{{ a }}" {% if f.get('asal', r['asal'] if r else '') == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Label khusus
+      <select name="tag">
+        <option value="" {% if not f.get('tag', r['tag'] if r else '') %}selected{% endif %}>— tidak ada —</option>
+        <option value="diet" {% if f.get('tag', r['tag'] if r else '') == 'diet' %}selected{% endif %}>Diet</option>
+        <option value="gym" {% if f.get('tag', r['tag'] if r else '') == 'gym' %}selected{% endif %}>Gym</option>
+        <option value="diet,gym" {% if f.get('tag', r['tag'] if r else '') == 'diet,gym' %}selected{% endif %}>Diet + Gym</option>
+      </select>
     </label>
   </div>
 

@@ -25,6 +25,28 @@
         {% endfor %}
       </select>
     </label>
+    <label>Asal daerah
+      <select name="asal">
+        <option value="">Semua daerah</option>
+        {% for a in asals %}
+        <option value="{{ a }}" {% if asal==a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Label khusus
+      <select name="tag">
+        <option value="">Semua</option>
+        <option value="diet" {% if tagf=="diet" %}selected{% endif %}>Diet</option>
+        <option value="gym" {% if tagf=="gym" %}selected{% endif %}>Gym</option>
+      </select>
+    </label>
+    <label>Urutkan
+      <select name="urut">
+        {% for k, label in uruts.items() %}
+        <option value="{{ k }}" {% if urut==k %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
     <label>Maks Rp/porsi
       <input type="number" name="maks" value="{{ maks }}" placeholder="cth: 8000" min="0">
     </label>
@@ -32,7 +54,7 @@
   <label class="check"><input type="checkbox" name="hemat" value="1" {% if super_hemat %}checked{% endif %}>
     Mode super hemat <span class="muted">(buang bahan opsional, lalu ranking ulang)</span></label>
   <button type="submit" class="btn">Terapkan</button>
-  {% if kat or maks or super_hemat %}<a class="btn ghost" href="{{ url_for('index') }}">Reset</a>{% endif %}
+  {% if kat or maks or super_hemat or asal or tagf or urut != "harga" %}<a class="btn ghost" href="{{ url_for('index') }}">Reset</a>{% endif %}
 </form>
 
 <form method="get" action="{{ url_for('index') }}" class="panel" id="harian">
@@ -69,7 +91,7 @@
       <input type="number" name="budget" value="{{ budget_txt }}" placeholder="cth: 50000" min="0">
     </label>
   </div>
-  {% for k in ['kategori','maks'] %}{% if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endif %}{% endfor %}
+  {% for k in ['kategori','maks','asal','tag','urut'] %}{% if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endif %}{% endfor %}
   {% if super_hemat %}<input type="hidden" name="hemat" value="1">{% endif %}
   <button type="submit" class="btn">Hitung</button>
   <button type="submit" name="auto" value="1" class="btn ghost">Isi menu termurah</button>
@@ -104,6 +126,9 @@
     <div class="card-head">
       <div>
         <span class="badge">{{ kat_label(c.resep.kategori) }}</span>
+        {% if c.asal %}<span class="badge asal">{{ c.asal }}</span>{% endif %}
+        {% if "diet" in c.tag_list %}<span class="badge diet">Diet</span>{% endif %}
+        {% if "gym" in c.tag_list %}<span class="badge gym">Gym</span>{% endif %}
         {% if c.kkal_porsi is not none %}<span class="badge gizi">{{ c.kkal_porsi }} kkal/porsi*</span>{% endif %}
         {% if c.dilewati %}<span class="badge hemat">{{ c.dilewati }} bahan opsional dibuang</span>{% endif %}
       </div>

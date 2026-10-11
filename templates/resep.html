@@ -12,6 +12,10 @@
 </div>
 <p>
   <span class="badge">{{ kat_label(normal.resep.kategori) }}</span>
+  {% if normal.resep.asal %}<span class="badge asal">{{ normal.resep.asal }}</span>{% endif %}
+  {% set tag_list = (normal.resep.tag or "").split(",") %}
+  {% if "diet" in tag_list %}<span class="badge diet">Diet</span>{% endif %}
+  {% if "gym" in tag_list %}<span class="badge gym">Gym</span>{% endif %}
   <span class="muted">{{ normal.porsi }} porsi &middot; {{ normal.resep.waktu_masak_menit }} menit &middot; {{ normal.resep.tingkat }}</span>
 </p>
 <p>{{ normal.resep.deskripsi }}</p>

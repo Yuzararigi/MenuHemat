@@ -5,8 +5,11 @@ data harga bahan pokok pasar yang diperbarui setiap hari.
 
 Fitur:
 - **Beranda** — ranking resep dari yang termurah (Rp/porsi) memakai harga
-  pasar terbaru, lengkap dengan filter kategori, batas Rp/porsi, favorit
-  (bintang), dan pengaturan pantangan/alergi.
+  pasar terbaru. Katalog **100 resep** dari 10 daerah (Jawa, Sunda,
+  Sumatera, Bali, Sulawesi, Kalimantan, Western, Asia, Timur, Nusantara),
+  lengkap dengan filter kategori, **asal daerah**, **label Diet/Gym**,
+  **urutan gizi** (kalori, protein, karbohidrat, lemak, serat, natrium),
+  batas Rp/porsi, favorit (bintang), dan pengaturan pantangan/alergi.
 - **Mode super hemat** — membuang bahan opsional lalu me-ranking ulang.
 - **Cek satu hari makan** — pilih hidangan sarapan/siang/malam sendiri
   (tiap pilihan tampil biaya per porsi), atau klik **Isi menu termurah**
@@ -128,6 +131,11 @@ app.py              aplikasi web (Flask)
 fetch_harga.py      pengambil data harga harian PIHPS
 init_db.py          membangun database dari nol (15 resep, 36 bahan + gizi,
                     langkah memasak, akun admin & user demo)
+ekspansi_resep.py   ekspansi katalog 15 -> 100 resep (migrasi kolom asal/tag,
+                    +58 bahan, +85 resep dari resep_baru.py; idempoten)
+resep_baru.py       data 85 resep baru (10 daerah x 10 resep)
+export_static.py    ekspor menuhemat.db menjadi docs/data.js (situs statis)
+docs/               situs statis untuk GitHub Pages (termasuk foto 100 resep)
 menuhemat.db        database SQLite (dibuat oleh init_db.py)
 skema-database.sql  draf skema awal (dokumentasi)
 templates/          halaman HTML (server-rendered, termasuk templates/admin/)
@@ -140,13 +148,20 @@ README.md           file ini
 ## Membangun ulang database
 
 ```
-python init_db.py     # hapus dan buat ulang menuhemat.db dari nol
-python fetch_harga.py # isi dengan data harga asli PIHPS
+python init_db.py        # hapus dan buat ulang menuhemat.db dari nol
+python fetch_harga.py    # isi dengan data harga asli PIHPS
+python ekspansi_resep.py # perluas katalog menjadi 100 resep + 94 bahan
+python export_static.py  # (opsional) bangun ulang situs statis di docs/
 ```
 
 Urutan ini penting: `init_db.py` membuat skema baru (tabel gizi, kolom
 langkah, kolom akun) + seed, lalu `fetch_harga.py` menimpa harga SAMPLE
-dengan data asli PIHPS per provinsi.
+dengan data asli PIHPS per provinsi. `ekspansi_resep.py` menambahkan kolom
+`asal`/`tag` pada resep, 58 bahan baru, dan 85 resep baru — aman dijalankan
+berulang (idempoten).
+
+Label **Diet** (≤400 kkal & serat ≥2 g/porsi) dan **Gym** (protein ≥20 g/porsi)
+dihitung dari komposisi bahan tiap resep, bukan klaim manual.
 
 ## Batasan yang diketahui
 

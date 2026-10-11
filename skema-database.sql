@@ -71,8 +71,11 @@ CREATE TABLE resep (
   porsi             INTEGER NOT NULL DEFAULT 4,
   waktu_masak_menit INTEGER,
   tingkat           TEXT DEFAULT 'mudah',   -- mudah/sedang/sulit
-  tags              TEXT,             -- 'pedas,berkuah' (comma-separated utk MVP)
+  tags              TEXT,             -- 'pedas,berkuah' (tags rasa, comma-separated)
   cocok_diet        TEXT,             -- 'rendah_garam,tinggi_protein,mpasi'
+  langkah           TEXT,             -- langkah memasak, satu langkah per baris
+  asal              TEXT,             -- daerah asal: Jawa/Sunda/Sumatera/Bali/Sulawesi/Kalimantan/Western/Asia/Timur/Nusantara
+  tag               TEXT,             -- label khusus: 'diet' / 'gym' / 'diet,gym' / NULL
   created_at        TEXT DEFAULT (datetime('now'))
 );
 

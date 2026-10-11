@@ -40,6 +40,21 @@ KATEGORI_LABEL = {
     "bekal": "Bekal",
 }
 
+ASAL_LABEL = ["Jawa", "Sunda", "Sumatera", "Bali", "Sulawesi", "Kalimantan",
+              "Western", "Asia", "Timur", "Nusantara"]
+
+URUT_LABEL = {
+    "harga": "Harga termurah",
+    "kalori-rendah": "Kalori terendah",
+    "kalori-tinggi": "Kalori tertinggi",
+    "protein": "Protein tertinggi",
+    "karbo-rendah": "Karbohidrat terendah",
+    "karbo-tinggi": "Karbohidrat tertinggi",
+    "lemak-rendah": "Lemak terendah",
+    "serat": "Serat tertinggi",
+    "natrium": "Natrium terendah",
+}
+
 
 # ---------- util ----------
 
@@ -362,6 +377,11 @@ def index():
     fav = favorit_ids(uid) if uid else set()
 
     kat = request.args.get("kategori", "")
+    asal = request.args.get("asal", "")
+    tagf = request.args.get("tag", "")
+    urut = request.args.get("urut", "harga")
+    if urut not in URUT_LABEL:
+        urut = "harga"
     maks = request.args.get("maks", "").strip()
     super_hemat = request.args.get("hemat") == "1"
     budget_txt = request.args.get("budget", "").strip()
@@ -370,6 +390,13 @@ def index():
     s3 = request.args.get("s3", "").strip()
     auto = request.args.get("auto") == "1"
 
+    def _kol(row, nama):
+        # kolom asal/tag hanya ada setelah migrasi ekspansi_resep.py
+        try:
+            return row[nama]
+        except (IndexError, KeyError):
+            return None
+
     cards, disembunyikan = [], 0
     for r in con.execute("SELECT * FROM resep ORDER BY nama"):
         if mengandung_pantangan(con, r["id"], pant):
@@ -377,6 +404,12 @@ def index():
             continue
         c = biaya_resep(con, r["id"], prices, super_hemat)
         if kat and r["kategori"] != kat:
+            continue
+        if asal and (_kol(r, "asal") or "") != asal:
+            continue
+        tag_list = [t.strip() for t in (_kol(r, "tag") or "").split(",")
+                    if t.strip()]
+        if tagf and tagf not in tag_list:
             continue
         if maks:
             try:
@@ -389,8 +422,28 @@ def index():
                       "per_porsi": c["per_porsi"],
                       "favorit": r["id"] in fav,
                       "dilewati": c["dilewati"],
+                      "asal": _kol(r, "asal"),
+                      "tag_list": tag_list,
+                      "gizi": gz["per_porsi"],
                       "kkal_porsi": round(gz["per_porsi"]["kalori"]) if gz["ada"] else None})
-    cards.sort(key=lambda x: x["per_porsi"])
+    if urut == "kalori-rendah":
+        cards.sort(key=lambda x: x["gizi"]["kalori"])
+    elif urut == "kalori-tinggi":
+        cards.sort(key=lambda x: -x["gizi"]["kalori"])
+    elif urut == "protein":
+        cards.sort(key=lambda x: -x["gizi"]["protein"])
+    elif urut == "karbo-rendah":
+        cards.sort(key=lambda x: x["gizi"]["karbo"])
+    elif urut == "karbo-tinggi":
+        cards.sort(key=lambda x: -x["gizi"]["karbo"])
+    elif urut == "lemak-rendah":
+        cards.sort(key=lambda x: x["gizi"]["lemak"])
+    elif urut == "serat":
+        cards.sort(key=lambda x: -x["gizi"]["serat"])
+    elif urut == "natrium":
+        cards.sort(key=lambda x: x["gizi"]["natrium"])
+    else:
+        cards.sort(key=lambda x: x["per_porsi"])
 
     # --- cek satu hari makan: mulai kosong, user pilih sendiri ---
     opsi = {"sarapan": [], "makan_siang": [], "makan_malam": []}
@@ -443,6 +496,7 @@ def index():
         "index.html", active="home", cards=cards, tgl=tgl, sumber=sumber,
         wilayah_tampil=wil, disembunyikan=disembunyikan, kat=kat,
         kategoris=KATEGORI_LABEL, maks=maks, super_hemat=super_hemat,
+        asal=asal, asals=ASAL_LABEL, tagf=tagf, urut=urut, uruts=URUT_LABEL,
         budget_txt=budget_txt, budget_err=budget_err,
         opsi=opsi, s1=s1, s2=s2, s3=s3, harian=harian,
         semua_bahan=semua_bahan, pant_info=pant_info,
@@ -794,16 +848,19 @@ def _simpan_resep(con, rid=None):
     data = (nama, request.form.get("deskripsi", "").strip(),
             request.form.get("kategori", "makan_malam"), porsi, menit,
             request.form.get("tingkat", "mudah"), request.form.get("tags", "").strip(),
-            request.form.get("langkah", "").strip())
+            request.form.get("langkah", "").strip(),
+            request.form.get("asal", "").strip() or None,
+            request.form.get("tag", "").strip() or None)
     if rid is None:
         cur = con.execute(
             """INSERT INTO resep (nama, deskripsi, kategori, porsi, waktu_masak_menit,
-                                  tingkat, tags, langkah) VALUES (?,?,?,?,?,?,?,?)""", data)
+                                  tingkat, tags, langkah, asal, tag) VALUES (?,?,?,?,?,?,?,?,?,?)""", data)
         rid = cur.lastrowid
     else:
         con.execute(
             """UPDATE resep SET nama=?, deskripsi=?, kategori=?, porsi=?,
-                              waktu_masak_menit=?, tingkat=?, tags=?, langkah=?
+                              waktu_masak_menit=?, tingkat=?, tags=?, langkah=?,
+                              asal=?, tag=?
                WHERE id=?""", data + (rid,))
         con.execute("DELETE FROM resep_bahan WHERE resep_id = ?", (rid,))
     for b in bahan_rows:

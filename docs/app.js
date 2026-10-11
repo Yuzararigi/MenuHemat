@@ -9,10 +9,21 @@
   const KAT = { sarapan: "Sarapan", makan_siang: "Makan siang", makan_malam: "Makan malam", camilan: "Camilan" };
   const GIZI_LABEL = [["kalori", "Kalori (kkal)"], ["protein", "Protein (g)"], ["karbo", "Karbohidrat (g)"], ["lemak", "Lemak (g)"], ["serat", "Serat (g)"], ["natrium", "Natrium (mg)"]];
 
-  /* Foto hidangan (file lokal di docs/images/). Bila file gagal dimuat,
-     <img> menghapus dirinya sendiri dan huruf inisial tampil sebagai fallback. */
-  const FOTO = {1:"nasi-goreng-jawa",2:"tumis-kangkung-terasi",3:"ayam-kecap",4:"sayur-asem",5:"tempe-goreng-tepung",6:"tahu-bacem",7:"telur-balado",8:"soto-ayam",9:"sayur-sop",10:"orek-tempe",11:"perkedel-kentang",12:"capcay",13:"mie-goreng-jawa",14:"tumis-buncis-tahu",15:"semur-telur-kentang"};
-  const fotoSrc = (r) => (FOTO[r.id] ? "images/" + FOTO[r.id] + ".jpg" : null);
+  /* Foto hidangan (file lokal di docs/images/<slug>.jpg). Slug diturunkan
+     dari nama resep. Bila file gagal dimuat, <img> menghapus dirinya
+     sendiri dan huruf inisial tampil sebagai fallback. */
+  const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const fotoSrc = (r) => "images/" + slugify(r.nama) + ".jpg";
+  /* badge label khusus (diet/gym) dari kolom tag resep, mis. "diet,gym" */
+  const tagList = (r) => (r.tag || "").split(",").map((t) => t.trim()).filter(Boolean);
+  function badgeHTML(r) {
+    const tags = tagList(r);
+    let h = "";
+    if (r.asal) h += '<span class="badge-asal">' + esc(r.asal) + "</span>";
+    if (tags.includes("diet")) h += '<span class="badge-khusus diet">Diet</span>';
+    if (tags.includes("gym")) h += '<span class="badge-khusus gym">Gym</span>';
+    return h ? '<span class="badges">' + h + "</span>" : "";
+  }
   function thumbHTML(r, tag, cls) {
     const initial = esc(r.nama.trim().charAt(0).toUpperCase());
     const src = fotoSrc(r);
@@ -108,6 +119,9 @@
     pantangan: new Set(lsGet("mh_pantangan", [])),
     favOnly: false,
     kategori: "semua",
+    asal: "semua",
+    tagF: "semua",
+    urut: "harga",
     maxRp: null,
     sehari: new Set(lsGet("mh_sehari", [])),
     rencana: lsGet("mh_rencana", [null, null, null, null, null, null, null]),
@@ -139,6 +153,7 @@
       '<span class="card-body">' +
       '<span class="kat">#' + r.id + " &middot; " + esc(KAT[r.kategori] || r.kategori) + "</span>" +
       "<h3>" + esc(r.nama) + "</h3>" +
+      badgeHTML(r) +
       '<p class="meta">' + rp(c.perPorsi) + "/porsi &middot; &plusmn;" + fmt1(g.perPorsi.kalori) + " kkal estimasi</p>" +
       "</span></button>"
     );
@@ -148,11 +163,23 @@
     return DB.resep.filter((r) => resepAman(r.id, state.pantangan));
   }
   function filteredResep() {
-    let list = visibleResep().map((r) => ({ r, c: biayaResep(r.id, state.wilayah) }));
+    let list = visibleResep().map((r) => ({ r, c: biayaResep(r.id, state.wilayah), g: giziResep(r.id).perPorsi }));
     if (state.kategori !== "semua") list = list.filter((x) => x.r.kategori === state.kategori);
+    if (state.asal !== "semua") list = list.filter((x) => x.r.asal === state.asal);
+    if (state.tagF !== "semua") list = list.filter((x) => tagList(x.r).includes(state.tagF));
     if (state.favOnly) list = list.filter((x) => state.fav.has(x.r.id));
     if (state.maxRp != null && !isNaN(state.maxRp)) list = list.filter((x) => x.c.perPorsi <= state.maxRp);
-    list.sort((a, b) => a.c.perPorsi - b.c.perPorsi);
+    const U = state.urut;
+    const gz = (x, k) => x.g[k] || 0;
+    if (U === "kalori-rendah") list.sort((a, b) => gz(a, "kalori") - gz(b, "kalori"));
+    else if (U === "kalori-tinggi") list.sort((a, b) => gz(b, "kalori") - gz(a, "kalori"));
+    else if (U === "protein") list.sort((a, b) => gz(b, "protein") - gz(a, "protein"));
+    else if (U === "karbo-rendah") list.sort((a, b) => gz(a, "karbo") - gz(b, "karbo"));
+    else if (U === "karbo-tinggi") list.sort((a, b) => gz(b, "karbo") - gz(a, "karbo"));
+    else if (U === "lemak-rendah") list.sort((a, b) => gz(a, "lemak") - gz(b, "lemak"));
+    else if (U === "serat") list.sort((a, b) => gz(b, "serat") - gz(a, "serat"));
+    else if (U === "natrium") list.sort((a, b) => gz(a, "natrium") - gz(b, "natrium"));
+    else list.sort((a, b) => a.c.perPorsi - b.c.perPorsi);
     return list;
   }
 
@@ -173,7 +200,7 @@
       '<div class="hero-label">Paling hemat hari ini</div>' +
       "<h2>" + esc(top.r.nama) + "</h2>" +
       '<div class="hero-harga">' + rp(top.c.perPorsi) + " <small>/porsi</small></div>" +
-      '<div class="hero-meta">' + top.r.waktu + " menit &middot; " + top.r.porsi + " porsi &middot; " + esc(KAT[top.r.kategori] || top.r.kategori) + "</div>" +
+      '<div class="hero-meta">' + top.r.waktu + " menit &middot; " + top.r.porsi + " porsi &middot; " + esc(KAT[top.r.kategori] || top.r.kategori) + (top.r.asal ? " &middot; khas " + esc(top.r.asal) : "") + "</div>" +
       '<div class="gizi-grid">' + gizis + "</div>" +
       '<p class="gizi-note">Angka gizi adalah estimasi &mdash; dihitung dari komposisi bahan dibagi jumlah porsi.</p>' +
       '<button type="button" data-detail="' + top.r.id + '">Lihat resep &amp; cara masak</button>' +
@@ -183,6 +210,7 @@
   function renderGrid() {
     const list = filteredResep();
     $("grid").innerHTML = list.map((x) => cardHTML(x.r, {})).join("");
+    $("grid-info").textContent = "Menampilkan " + list.length + " dari " + DB.resep.length + " resep.";
     $("grid-empty").hidden = list.length > 0;
     document.querySelectorAll("#pant-count").forEach((el) => (el.textContent = state.pantangan.size));
   }
@@ -290,8 +318,9 @@
     const langkah = (r.langkah || []).map((s, i) => "<li>" + esc(s) + "</li>").join("");
     $("modal-body").innerHTML =
       "<h2>" + esc(r.nama) + "</h2>" +
+      badgeHTML(r) +
       (fotoSrc(r) ? '<div class="detail-foto"><img src="' + fotoSrc(r) + '" alt="' + esc(r.nama) + '" onerror="this.closest(\'.detail-foto\').remove()"></div>' : "") +
-      '<p class="hint">' + esc(KAT[r.kategori] || r.kategori) + " &middot; " + r.waktu + " menit &middot; " + r.porsi + " porsi &middot; " + esc(r.tingkat || "") + "</p>" +
+      '<p class="hint">' + esc(KAT[r.kategori] || r.kategori) + " &middot; " + r.waktu + " menit &middot; " + r.porsi + " porsi &middot; " + esc(r.tingkat || "") + (r.asal ? " &middot; khas " + esc(r.asal) : "") + "</p>" +
       (r.deskripsi ? "<p>" + esc(r.deskripsi) + "</p>" : "") +
       "<h3>Rincian biaya (" + esc(state.wilayah) + ")</h3>" +
       '<table class="biaya-table"><thead><tr><th>Bahan</th><th>Harga satuan</th><th>Biaya</th></tr></thead><tbody>' + biayaRows + "</tbody></table>" +
@@ -336,6 +365,9 @@
 
     // filter beranda
     $("f-kategori").addEventListener("change", (e) => { state.kategori = e.target.value; renderGrid(); });
+    $("f-asal").addEventListener("change", (e) => { state.asal = e.target.value; renderGrid(); });
+    $("f-tag").addEventListener("change", (e) => { state.tagF = e.target.value; renderGrid(); });
+    $("f-urut").addEventListener("change", (e) => { state.urut = e.target.value; renderGrid(); });
     $("f-max").addEventListener("input", (e) => {
       const v = parseFloat(e.target.value);
       state.maxRp = isNaN(v) || v <= 0 ? null : v;

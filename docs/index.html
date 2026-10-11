@@ -42,6 +42,41 @@
           <option value="camilan">Camilan</option>
         </select>
       </label>
+      <label>Asal daerah
+        <select id="f-asal">
+          <option value="semua">Semua daerah</option>
+          <option value="Jawa">Jawa</option>
+          <option value="Sunda">Sunda</option>
+          <option value="Sumatera">Sumatera</option>
+          <option value="Bali">Bali</option>
+          <option value="Sulawesi">Sulawesi</option>
+          <option value="Kalimantan">Kalimantan</option>
+          <option value="Western">Western</option>
+          <option value="Asia">Asia</option>
+          <option value="Timur">Timur</option>
+          <option value="Nusantara">Nusantara</option>
+        </select>
+      </label>
+      <label>Label khusus
+        <select id="f-tag">
+          <option value="semua">Semua</option>
+          <option value="diet">Diet</option>
+          <option value="gym">Gym</option>
+        </select>
+      </label>
+      <label>Urutkan
+        <select id="f-urut">
+          <option value="harga">Harga termurah</option>
+          <option value="kalori-rendah">Kalori terendah</option>
+          <option value="kalori-tinggi">Kalori tertinggi</option>
+          <option value="protein">Protein tertinggi</option>
+          <option value="karbo-rendah">Karbohidrat terendah</option>
+          <option value="karbo-tinggi">Karbohidrat tertinggi</option>
+          <option value="lemak-rendah">Lemak terendah</option>
+          <option value="serat">Serat tertinggi</option>
+          <option value="natrium">Natrium terendah</option>
+        </select>
+      </label>
       <label>Maks Rp/porsi
         <input id="f-max" type="number" min="0" placeholder="cth. 5000">
       </label>
@@ -54,6 +89,7 @@
     </div>
 
     <div id="grid" class="grid"></div>
+    <p id="grid-info" class="hint"></p>
     <p id="grid-empty" class="empty" hidden>Tidak ada resep yang cocok dengan filter.</p>
   </section>
 

@@ -73,6 +73,9 @@ input[type="number"], input[type="text"], input[type="password"], select {
   padding: 2px 8px; border-radius: 20px; margin-right: 4px;
 }
 .badge.hemat { background: var(--hijau-muda); color: var(--hijau); }
+.badge.asal { background: #ede9fe; color: #5b21b6; }
+.badge.diet { background: #e6f4ea; color: #137333; }
+.badge.gym { background: #fdecea; color: #b3261e; }
 .star {
   background: none; border: 0; font-size: 1.6rem; cursor: pointer; color: #d1d5db; padding: 0 2px;
 }
